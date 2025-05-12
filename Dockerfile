@@ -5,7 +5,7 @@ FROM zenika/alpine-chrome:with-node
 WORKDIR /usr/src/app
 
 # 3. Копируем только список зависимостей, ставим их
-COPY package.json package-lock.json ./
+COPY package.json ./
 RUN npm install --production
 
 # 4. Копируем весь код
