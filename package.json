@@ -2,9 +2,10 @@
   "name": "ozon-proxy",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
+ "scripts": {
+  "start": "node index.js",
++ "postinstall": "npm install puppeteer --unsafe-perm"
+}
   "devDependencies": {
   "puppeteer": "^21.3.8"
 },
