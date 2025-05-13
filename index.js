@@ -1,20 +1,23 @@
-const express         = require('express');
-const puppeteer       = require('puppeteer-extra');
-const StealthPlugin   = require('puppeteer-extra-plugin-stealth');
+const express = require('express');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 
+// Подключаем плагин stealth для обхода антибот-защиты
 puppeteer.use(StealthPlugin());
 
-const app  = express();
+const app = express();
 const PORT = process.env.PORT || 10000;
 
+// Эндпоинт для скрейпа страницы товара Ozon
 app.get('/scrape', async (req, res) => {
   const target = req.query.url;
   if (!target) return res.status(400).send('Missing ?url');
 
   try {
+    // Запускаем browser с явным указанием бинаря Chromium
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: process.env.CHROME_PATH || '/usr/bin/chromium-browser',
+      executablePath: '/usr/bin/chromium-browser',
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -35,7 +38,7 @@ app.get('/scrape', async (req, res) => {
     await browser.close();
 
     res
-      .set('Access-Control-Allow-Origin','*')
+      .set('Access-Control-Allow-Origin', '*')
       .type('text/html')
       .send(html);
   } catch (e) {
