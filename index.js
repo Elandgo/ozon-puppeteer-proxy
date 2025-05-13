@@ -1,38 +1,53 @@
-const express     = require('express');
-const cloudscraper = require('cloudscraper');
+const express = require('express');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 
-const app  = express();
-const PORT = process.env.PORT || 10000;
+// Используем stealth-плагин
+puppeteer.use(StealthPlugin());
 
-// Эндпоинт proxy: ?url=https://www.ozon.ru/product/…
+const app   = express();
+const PORT  = process.env.PORT || 10000;
+
 app.get('/scrape', async (req, res) => {
   const target = req.query.url;
-  if (!target) {
-    return res.status(400).send('Missing ?url');
-  }
+  if (!target) return res.status(400).send('Missing ?url');
 
+  let browser;
   try {
-    // cloudscraper сам обрабатывает JS-challenge Cloudflare
-    const html = await cloudscraper.get({
-      uri: target,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
-                      'AppleWebKit/537.36 (KHTML, like Gecko) ' +
-                      'Chrome/115.0.0.0 Safari/537.36'
-      },
-      gzip: true
+    browser = await puppeteer.launch({
+      headless: true,
+      executablePath: '/usr/bin/chromium-browser',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--single-process',
+        '--no-zygote',
+        '--disable-blink-features=AutomationControlled'
+      ],
+      dumpIO: true,
+      pipe: true
     });
 
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+    // Открываем страницу и ждём basic load
+    await page.goto(target, { waitUntil: 'networkidle2', timeout: 60000 });
+
+    // Подождём, пока элемент заголовка товара появится на странице
+    await page.waitForSelector('h1[data-widget="webProductHeading"]', { timeout: 60000 });
+
+    const html = await page.content();
     res
       .set('Access-Control-Allow-Origin', '*')
       .type('text/html')
       .send(html);
   } catch (e) {
-    console.error('Cloudscraper error:', e);
+    console.error('Puppeteer error:', e);
     res.status(500).send('Error: ' + e.message);
+  } finally {
+    if (browser) await browser.close();
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Listening on ${PORT}`));
