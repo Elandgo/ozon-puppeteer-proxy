@@ -32,7 +32,8 @@ app.get('/scrape', async (req, res) => {
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
     await page.goto(target, { waitUntil: 'networkidle2', timeout: 60000 });
-    await page.waitForTimeout(3000);
+    // Ждем 3 секунды для прохождения антибот-проверок
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     const html = await page.content();
     await browser.close();
