@@ -11,7 +11,8 @@ app.get('/scrape', async (req, res) => {
   try {
     browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox','--disable-setuid-sandbox']
+      // disable the Chrome sandbox and avoid /dev/shm issues inside containers
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     });
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
